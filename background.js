@@ -1,74 +1,136 @@
 "use strict";
 
-function getYouTubeParams() {
-	return fetch("https://www.youtube.com/", {
+class Cache {
+	constructor(func, timeout = 15*60*1000) {
+		this.data = null;
+		this.lastUpdate = 0;
+		this.func = func;
+		this.timeout = timeout;
+	}
+	
+	invalidate() {
+		this.data = null;
+		this.lastUpdate = 0;
+	}
+	
+	async getData() {
+		if(this.lastUpdate > Date.now() - this.timeout)
+			return this.data;
+		
+		this.data = await Promise.resolve(this.func())
+		this.lastUpdate = Date.now();
+		
+		return this.data;
+	}
+}
+
+
+let unseenCount = 0;
+let cache = new Cache(() => getNotifications());
+let params = getYouTubeParams();
+
+let base = document.head.appendChild(document.createElement("base"));
+base.href = "https://www.youtube.com/";
+
+setInterval(updateBadge, 600000);
+updateBadge();
+
+browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+	if(request.type == "getNotifications") {
+		return cache.getData();
+	} else if(request.type == "loadMoreNotifications") {
+		return loadMoreNotifications(request.loadMoreHref);
+	}
+});
+
+
+
+async function getYouTubeParams() {
+	let response = await fetch("https://www.youtube.com/", {
 		redirect: "follow",
 		credentials: "include",
-	})
-	.then(response => response.text())
-	.then(text => {
-		let index = text.indexOf("config['request-headers']");
-		if(index == -1) throw "string not found";
-		let start = text.indexOf("{", index);
-		if(start == -1) throw "string not found";
-		let end = text.indexOf("}", start);
-		if(end == -1) throw "string not found";
-		
-		let requestHeaders = JSON.parse(
-			text.substring(start, end + 1)
-			.replace(/\'/g, '"')
-		);
-		
-		let headers = new Headers();
-		for(let key in requestHeaders)
-			headers.append(key, requestHeaders[key]);
-		
-		index = text.indexOf("XSRF_TOKEN");
-		if(index == -1) throw "string not found";
-		start = text.lastIndexOf("{", index);
-		if(start == -1) throw "string not found";
-		end = text.indexOf("}", index);
-		if(end == -1) throw "string not found";
-		
-		
-		let config = JSON.parse(
-			text.substring(start, end + 1)
-			.replace(/\'/g, '"')
-		);
-		return {headers, config};
 	});
+	let text = await response.text();
+	
+	let index = text.indexOf("config['request-headers']");
+	if(index == -1) throw "string not found";
+	let start = text.indexOf("{", index);
+	if(start == -1) throw "string not found";
+	let end = text.indexOf("}", start);
+	if(end == -1) throw "string not found";
+	
+	let requestHeaders = JSON.parse(
+		text.substring(start, end + 1)
+		.replace(/\'/g, '"')
+	);
+	
+	let headers = new Headers();
+	for(let key in requestHeaders)
+		headers.append(key, requestHeaders[key]);
+	
+	index = text.indexOf("XSRF_TOKEN");
+	if(index == -1) throw "string not found";
+	start = text.lastIndexOf("{", index);
+	if(start == -1) throw "string not found";
+	end = text.indexOf("}", index);
+	if(end == -1) throw "string not found";
+	
+	
+	let config = JSON.parse(
+		text.substring(start, end + 1)
+		.replace(/\'/g, '"')
+	);
+	return {headers, config};
 }
 
-function getNotificationCount({headers, config}) {
-	return fetch('https://www.youtube.com/feed_ajax?action_get_unseen_notification_count=1', {
+async function getNotificationCount() {
+	let {headers} = await params;
+	let response = await fetch('https://www.youtube.com/feed_ajax?action_get_unseen_notification_count=1', {
 		credentials: "include",
 		headers,
-	})
-	.then(response => response.json())
-	.then(obj => obj.unseen_notification_count);
+	});
+	let obj = await response.json();
+	return obj.unseen_notification_count;
 }
 
-function getNotifications({headers, config}) {
+async function getNotifications() {
+	let {headers, config} = await params;
+	
 	let body = new URLSearchParams();
 	body.append("session_token", config["XSRF_TOKEN"]);
 	body.append("action_get_notifications_flyout", "1");
 	
-	return fetch('https://www.youtube.com/feed_ajax?spf=load', {
+	let response = await fetch('https://www.youtube.com/feed_ajax?spf=load', {
 		method: 'POST',
 		body,
 		credentials: "include",
 		headers,
-	})
-	.then(response => response.json())
-	.then(obj => obj.body["yt-masthead-notifications-content"])
-	.then(parseNotifications);
+	});
+	let obj = await response.json();
+	return parseNotifications(obj.body["yt-masthead-notifications-content"]);
+}
+
+async function loadMoreNotifications(loadMoreHref) {
+	let {headers} = await params;
+	let response = await fetch(loadMoreHref, {
+		credentials: "include",
+		headers,
+	});
+	let obj = await response.json();
+	return parseNotifications("<ol>" + obj.content_html + "</ol>" + obj.load_more_widget_html);
 }
 
 function parseNotifications(text) {
 	let node = document.createElement("div");
 	node.innerHTML = text;
 	
-	return [...node.querySelectorAll("li .feed-item-container")].map(node => {
+	let loadMoreHref = node.querySelector("button.browse-items-load-more-button").dataset.uixLoadMoreHref;
+	// resolve relative URL (due to base url set to https://youtube.com)
+	let link = document.createElement("a");
+	link.href = loadMoreHref;
+	loadMoreHref = link.href;
+	
+	let notifications = [...node.querySelectorAll("li .feed-item-container")].map(node => {
 		let unseen = !!node.querySelector(".unread-dot");
 		let img = node.querySelector(".notification-avatar .yt-thumb img");
 		let avatar = img.dataset.thumb || img.src;
@@ -81,6 +143,11 @@ function parseNotifications(text) {
 		
 		return { unseen, avatar, title, url, description, thumbnail };
 	});
+	
+	return {
+		loadMoreHref,
+		notifications,
+	};
 }
 
 function cleanup(node) {
@@ -98,75 +165,19 @@ function cleanup(node) {
 	return node;
 }
 
-class Cache {
-	constructor(func, timeout = 15*60*1000) {
-		this.data = null;
-		this.lastUpdate = 0;
-		this.func = func;
-		this.timeout = timeout;
-	}
+async function updateBadge() {
+	let count = await getNotificationCount();
 	
-	invalidate() {
-		this.data = null;
-		this.lastUpdate = 0;
-	}
+	if(unseenCount != count)
+		cache.invalidate();
+	unseenCount = count;
 	
-	getData() {
-		return new Promise((resolve, reject) => {
-			if(this.lastUpdate > Date.now() - this.timeout) {
-				resolve(this.data);
-				return;
-			}
-			
-			Promise.resolve(this.func())
-			.then(data => {
-				this.data = data;
-				this.lastUpdate = Date.now();
-				resolve(data);
-			})
-			.catch(reject);
-		});
+	if(count == 0) {
+		browser.browserAction.setBadgeText({text: ""});
+		browser.browserAction.setTitle({title: "YouTube"});
+	} else {
+		browser.browserAction.setBadgeText({text: "" + count});
+		browser.browserAction.setTitle({title: "YouTube: " + count + " unseen notification(s)"});
 	}
 }
-
-
-let unseenCount = 0;
-let cache;
-
-function setup(data) {
-	cache = new Cache(() => getNotifications(data));
-	
-	setInterval(() => updateBadge(data), 600000);
-	updateBadge(data);
-	
-	browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
-		if(request.type == "getNotifications") {
-			return cache.getData();
-		}
-	});
-}
-
-function updateBadge(data) {
-	getNotificationCount(data)
-	.then(count => {
-		if(unseenCount != count)
-			cache.invalidate();
-		unseenCount = count;
-		
-		if(count == 0) {
-			browser.browserAction.setBadgeText({text: ""});
-			browser.browserAction.setTitle({title: "YouTube"});
-		} else {
-			browser.browserAction.setBadgeText({text: "" + count});
-			browser.browserAction.setTitle({title: "YouTube: " + count + " unseen notification(s)"});
-		}
-	});
-}
-
-let base = document.head.appendChild(document.createElement("base"));
-base.href = "https://youtube.com/";
-
-getYouTubeParams()
-.then(setup);
-
 

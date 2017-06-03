@@ -2,13 +2,22 @@
 
 let list = document.querySelector("ol");
 
-browser.runtime.sendMessage({
-	type: "getNotifications",
-})
-.then(notifications => {
-	list.innerHTML = "";
-	list.className = "";
-	
+(async () => {
+	try {
+		let data = await browser.runtime.sendMessage({
+			type: "getNotifications",
+		});
+		list.innerHTML = "";
+		list.className = "";
+		renderNotifications(data);
+	} catch(e) {
+		list.innerHTML = "<li>An error has occured, could not load notifications.</li>";
+		list.className = "error";
+		throw e;
+	}
+})();
+
+function renderNotifications({loadMoreHref, notifications}) {
 	notifications.forEach(notification => {
 		let item = list.appendChild(document.createElement("li"));
 		if(notification.unseen)
@@ -40,12 +49,29 @@ browser.runtime.sendMessage({
 		let img = thumb.appendChild(document.createElement("img"));
 		img.src = notification.thumbnail;
 	});
-})
-.catch(e => {
-	list.innerHTML = "<li>An error has occured, could not load notifications.</li>";
-	list.className = "error";
-	throw e;
-});
+	
+	let item = list.appendChild(document.createElement("li"));
+	item.className = "load-more";
+	
+	let button = item.appendChild(document.createElement("button"));
+	button.textContent = "Load more";
+	button.addEventListener("click", async ev => {
+		button.disabled = true;
+		
+		try {
+			let data = await browser.runtime.sendMessage({
+				type: "loadMoreNotifications",
+				loadMoreHref,
+			});
+			
+			item.parentNode.removeChild(item);
+			renderNotifications(data);
+		} catch(e) {
+			button.disabled = false;
+			throw e;
+		}
+	});
+}
 
 function findLink(event) {
 	let element = event.target;
