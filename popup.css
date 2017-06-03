@@ -1,0 +1,127 @@
+html, body, ol, ul {
+	margin: 0;
+	padding: 0;
+}
+
+html {
+	overflow: hidden;
+}
+
+body {
+	width: 450px;
+	height: 400px;
+	overflow: hidden;
+	background-color: #f5f5f5;
+	color: #767676;
+	line-height: 1.3em;
+	font-size: 11px;
+	display: flex;
+	flex-direction: column;
+}
+
+.subscriptions-link {
+	background: #444 url("icon-48.png") no-repeat 12px center / 24px 24px;
+	color: #eee;
+	height: 24px;
+	line-height: 24px;
+	padding: 12px;
+	padding-left: 48px;
+	font-size: 18px;
+	text-decoration: none;
+}
+.subscriptions-link:hover, .subscriptions-link:focus {
+	text-decoration: underline;
+}
+
+ol, ul {
+	list-style: none;
+}
+
+ol {
+	flex: 1 1 auto;
+	overflow: auto;
+}
+
+.loading, .error {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #222;
+	font-size: 16px;
+}
+svg {
+	vertical-align: middle;
+	padding-right: 1em;
+}
+
+.notification {
+	position: relative;
+}
+
+.unread.notification::before {
+	content: "";
+	position: absolute;
+	left: 7.5px;
+	top: 35px;
+	width: 4px;
+	height: 4px;
+	border-radius: 50%;
+	background: #167ac6;
+	transform: translate(-50%, -50%)
+}
+
+.notification a {
+	padding: 15px;
+	display: flex;
+	flex-direction: horizontal;
+	border-bottom: 1px solid rgba(0,0,0,0.1);
+	text-decoration: inherit;
+	color: inherit;
+}
+.notification a:hover, .notification a:focus {
+	background: rgba(0.5, 0.5, 0.5, 0.05);
+}
+
+.avatar {
+	border-radius: 50%;
+	width: 40px;
+	height: 40px;
+}
+
+.content {
+	margin: 0 15px;
+	flex: 1 1 auto;
+}
+
+.title {
+	color: #222;
+	font-size: 13px;
+	font-weight: normal;
+	margin: 0;
+}
+
+.description li {
+	display: inline-block;
+}
+.description li:after {
+	content: '\002022';
+	margin: 0 4px;
+}
+.description li:last-child:after {
+	content: '';
+}
+
+.thumbnail {
+	flex: 0 0 72px;
+	max-height: 40px;
+	position: relative;
+	overflow: hidden;
+}
+.thumbnail img {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	height: auto;
+	width: 100%;
+}
+
