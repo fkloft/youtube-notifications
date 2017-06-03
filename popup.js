@@ -5,7 +5,6 @@ let list = document.querySelector("ol");
 browser.runtime.sendMessage({
 	type: "getNotifications",
 })
-.then(i=>new Promise(resolve => setTimeout(() => resolve(i), 5000)))
 .then(notifications => {
 	list.innerHTML = "";
 	list.className = "";
