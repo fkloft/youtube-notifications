@@ -12,8 +12,8 @@ browser.runtime.sendMessage({
 	
 	notifications.forEach(notification => {
 		let item = list.appendChild(document.createElement("li"));
-		if(notification.unread)
-			item.className = "unread notification";
+		if(notification.unseen)
+			item.className = "unseen notification";
 		else
 			item.className = "notification";
 		

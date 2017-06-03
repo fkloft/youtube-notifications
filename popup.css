@@ -58,7 +58,7 @@ svg {
 	position: relative;
 }
 
-.unread.notification::before {
+.unseen.notification::before {
 	content: "";
 	position: absolute;
 	left: 7.5px;

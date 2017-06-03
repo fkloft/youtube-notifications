@@ -1,8 +1,6 @@
 "use strict";
 
 function getYouTubeParams() {
-
-var result;
 	return fetch("https://www.youtube.com/", {
 		redirect: "follow",
 		credentials: "include",
@@ -71,7 +69,7 @@ function parseNotifications(text) {
 	node.innerHTML = text;
 	
 	return [...node.querySelectorAll("li .feed-item-container")].map(node => {
-		let unread = !!node.querySelector(".unread-dot");
+		let unseen = !!node.querySelector(".unread-dot");
 		let avatar = node.querySelector(".notification-avatar .yt-thumb img").src;
 		let link = node.querySelector(".yt-lockup-title a");
 		let title = link.title;
@@ -80,7 +78,7 @@ function parseNotifications(text) {
 		let description = cleanup(node.querySelector(".yt-lockup-byline")).innerHTML;
 		let thumbnail = node.querySelector(".notification-thumb .yt-thumb img").src;
 		
-		return { unread, avatar, title, url, description, thumbnail };
+		return { unseen, avatar, title, url, description, thumbnail };
 	});
 }
 
@@ -107,6 +105,11 @@ class Cache {
 		this.timeout = timeout;
 	}
 	
+	invalidate() {
+		this.data = null;
+		this.lastUpdate = 0;
+	}
+	
 	getData() {
 		return new Promise((resolve, reject) => {
 			if(this.lastUpdate > Date.now() - this.timeout) {
@@ -125,11 +128,15 @@ class Cache {
 	}
 }
 
+
+let unseenCount = 0;
+let cache;
+
 function setup(data) {
+	cache = new Cache(() => getNotifications(data));
+	
 	setInterval(() => updateBadge(data), 600000);
 	updateBadge(data);
-	
-	let cache = new Cache(() => getNotifications(data));
 	
 	browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 		if(request.type == "getNotifications") {
@@ -142,12 +149,16 @@ function setup(data) {
 function updateBadge(data) {
 	getNotificationCount(data)
 	.then(count => {
+		if(unseenCount != count)
+			cache.invalidate();
+		unseenCount = count;
+		
 		if(count == 0) {
 			browser.browserAction.setBadgeText({text: ""});
 			browser.browserAction.setTitle({title: "YouTube"});
 		} else {
 			browser.browserAction.setBadgeText({text: "" + count});
-			browser.browserAction.setTitle({title: "YouTube: " + count + " unread notification(s)"});
+			browser.browserAction.setTitle({title: "YouTube: " + count + " unseen notification(s)"});
 		}
 	});
 }
