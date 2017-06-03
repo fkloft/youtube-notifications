@@ -59,4 +59,5 @@ typings/
 
 # backup files
 *~
+*.xpi
 

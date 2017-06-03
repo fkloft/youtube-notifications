@@ -70,13 +70,14 @@ function parseNotifications(text) {
 	
 	return [...node.querySelectorAll("li .feed-item-container")].map(node => {
 		let unseen = !!node.querySelector(".unread-dot");
-		let avatar = node.querySelector(".notification-avatar .yt-thumb img").src;
+		let img = node.querySelector(".notification-avatar .yt-thumb img");
+		let avatar = img.dataset.thumb || img.src;
 		let link = node.querySelector(".yt-lockup-title a");
 		let title = link.title;
 		let url = link.href;
-		
 		let description = cleanup(node.querySelector(".yt-lockup-byline")).innerHTML;
-		let thumbnail = node.querySelector(".notification-thumb .yt-thumb img").src;
+		img = node.querySelector(".notification-thumb .yt-thumb img");
+		let thumbnail = img.dataset.thumb || img.src;
 		
 		return { unseen, avatar, title, url, description, thumbnail };
 	});
