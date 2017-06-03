@@ -140,8 +140,7 @@ function setup(data) {
 	
 	browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 		if(request.type == "getNotifications") {
-			cache.getData().then(sendResponse);
-			return true;
+			return cache.getData();
 		}
 	});
 }
