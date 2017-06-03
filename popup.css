@@ -14,13 +14,17 @@ body {
 	background-color: #f5f5f5;
 	color: #767676;
 	line-height: 1.3em;
-	font-size: 11px;
 	display: flex;
 	flex-direction: column;
 }
 
 .subscriptions-link {
-	background: #444 url("icon-48.png") no-repeat 12px center / 24px 24px;
+	box-sizing: content-box;
+	background-color: #444;
+	background-repeat: no-repeat;
+	background-image: url("icon-48.png"), url("newwin.svg");
+	background-position: 12px center, right 12px center;
+	background-size: 24px 24px;
 	color: #eee;
 	height: 24px;
 	line-height: 24px;
@@ -38,6 +42,7 @@ ol, ul {
 }
 
 ol {
+	font-size: 11px;
 	flex: 1 1 auto;
 	overflow: auto;
 }

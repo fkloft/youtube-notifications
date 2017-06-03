@@ -29,7 +29,7 @@
 	
 	"browser_action": {
 		"default_title": "YouTube",
-		"browser_style": false,
+		"browser_style": true,
 		"default_popup": "popup.htm",
 		"default_icon": {
 			"16": "icon-16.png",
