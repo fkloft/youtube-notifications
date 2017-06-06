@@ -53,6 +53,24 @@ function renderNotifications({loadMoreHref, notifications}) {
 		
 		let img = thumb.appendChild(document.createElement("img"));
 		img.src = notification.thumbnail;
+		
+		if(notification.url.match(/https:\/\/(?:www)?\.youtube\.com\/watch\?(?:[^&]*&)*v=([^&]+)(?:&|#|$)/)) {
+			let id = RegExp.$1;
+			
+			let button = item.appendChild(document.createElement("button"));
+			button.title = "Watch later";
+			button.textContent = "Watch later";
+			button.className = "watch-later yt-uix-button yt-uix-button-default";
+			button.addEventListener("click", async ev => {
+				try {
+					button.disabled = true;
+					button.classList.remove("error");
+					await watchLater(button, id);
+				} finally {
+					button.disabled = false;
+				}
+			});
+		}
 	});
 	
 	let item = list.appendChild(document.createElement("li"));
@@ -76,6 +94,21 @@ function renderNotifications({loadMoreHref, notifications}) {
 			throw e;
 		}
 	});
+}
+
+async function watchLater(button, id) {
+	let remove = button.classList.contains("added");
+	
+	let added = await browser.runtime.sendMessage({
+		type: "watchLater",
+		id,
+		remove,
+	});
+	
+	if(added)
+		button.classList.add("added");
+	else
+		button.classList.remove("added");
 }
 
 function notificationExists(a) {

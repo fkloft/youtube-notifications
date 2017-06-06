@@ -35,11 +35,13 @@ base.href = "https://www.youtube.com/";
 setInterval(updateBadge, 600000);
 updateBadge();
 
-browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
 	if(request.type == "getNotifications") {
 		return cache.getData();
 	} else if(request.type == "loadMoreNotifications") {
 		return loadMoreNotifications(request.loadMoreHref);
+	} else if(request.type == "watchLater") {
+		return watchLater(request.id, request.remove);
 	}
 });
 
@@ -85,7 +87,7 @@ async function getYouTubeParams() {
 
 async function getNotificationCount() {
 	let {headers} = await params;
-	let response = await fetch('https://www.youtube.com/feed_ajax?action_get_unseen_notification_count=1', {
+	let response = await fetch("https://www.youtube.com/feed_ajax?action_get_unseen_notification_count=1", {
 		credentials: "include",
 		headers,
 	});
@@ -100,8 +102,8 @@ async function getNotifications() {
 	body.append("session_token", config["XSRF_TOKEN"]);
 	body.append("action_get_notifications_flyout", "1");
 	
-	let response = await fetch('https://www.youtube.com/feed_ajax?spf=load', {
-		method: 'POST',
+	let response = await fetch("https://www.youtube.com/feed_ajax?spf=load", {
+		method: "POST",
 		body,
 		credentials: "include",
 		headers,
@@ -163,6 +165,25 @@ function cleanup(node) {
 		}
 	}
 	return node;
+}
+
+async function watchLater(id, remove=false) {
+	let {headers, config} = await params;
+	
+	let body = new URLSearchParams();
+	body.append("session_token", config["XSRF_TOKEN"]);
+	body.append("video_ids", id);
+	
+	let response = await fetch("https://www.youtube.com/playlist_video_ajax?action_" + (remove ? "delete_from" : "add_to") + "_watch_later_list=1", {
+		method: "POST",
+		body,
+		credentials: "include",
+		headers,
+	});
+	let obj = await response.json();
+	
+	if(obj && obj["code"] && obj["code"] === "SUCCESS") return !remove;
+	throw obj;
 }
 
 async function updateBadge() {
