@@ -4,6 +4,15 @@ let list = document.querySelector("ol");
 
 let renderedNotifications = [];
 
+document.querySelector(".options").addEventListener("click", ev => {
+	[...document.querySelectorAll(".options input[type='checkbox']")].forEach(input => {
+		if(input.checked)
+			document.body.classList.add(input.id);
+		else
+			document.body.classList.remove(input.id);
+	});
+});
+
 (async () => {
 	try {
 		let data = await browser.runtime.sendMessage({
@@ -21,14 +30,16 @@ let renderedNotifications = [];
 
 function renderNotifications({loadMoreHref, notifications}) {
 	notifications.forEach(notification => {
-		if(notificationExists(notification)) return;
-		renderedNotifications.push(notification);
-		
 		let item = list.appendChild(document.createElement("li"));
 		if(notification.unseen)
 			item.className = "unseen notification";
 		else
 			item.className = "notification";
+		
+		if(notificationExists(notification))
+			item.classList.add("dupe");
+		else
+			renderedNotifications.push(notification);
 		
 		let link = item.appendChild(document.createElement("a"));
 		link.href = notification.url;

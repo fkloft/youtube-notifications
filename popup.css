@@ -18,14 +18,20 @@ body {
 	flex-direction: column;
 }
 
-.subscriptions-link {
-	box-sizing: content-box;
+header {
 	background-color: #444;
+	display: flex;
+	flex-direction: row;
+	color: #eee;
+}
+.subscriptions-link {
+	flex: 1 1 auto;
+	box-sizing: content-box;
 	background-repeat: no-repeat;
 	background-image: url("images/icon-48.png"), url("newwin.svg");
 	background-position: 12px center, right 12px center;
 	background-size: 24px 24px;
-	color: #eee;
+	color: inherit;
 	height: 24px;
 	line-height: 24px;
 	padding: 12px;
@@ -35,6 +41,21 @@ body {
 }
 .subscriptions-link:hover, .subscriptions-link:focus {
 	text-decoration: underline;
+}
+.options {
+	white-space: nowrap;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-around;
+	margin: 0 0.1em;
+}
+.options label {
+	font-size: 0.9em;
+	padding-right: 0.5em;
+}
+.options input {
+	vertical-align: top;
+	margin: 0;
 }
 
 ol, ul {
@@ -61,6 +82,11 @@ svg {
 
 .notification {
 	position: relative;
+}
+
+body.hide_dupes .notification.dupe,
+body.hide_seen .notification:not(.unseen) {
+	display: none;
 }
 
 .unseen.notification::before {
