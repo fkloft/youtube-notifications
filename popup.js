@@ -2,6 +2,8 @@
 
 let list = document.querySelector("ol");
 
+let renderedNotifications = [];
+
 (async () => {
 	try {
 		let data = await browser.runtime.sendMessage({
@@ -19,6 +21,9 @@ let list = document.querySelector("ol");
 
 function renderNotifications({loadMoreHref, notifications}) {
 	notifications.forEach(notification => {
+		if(notificationExists(notification)) return;
+		renderedNotifications.push(notification);
+		
 		let item = list.appendChild(document.createElement("li"));
 		if(notification.unseen)
 			item.className = "unseen notification";
@@ -71,6 +76,11 @@ function renderNotifications({loadMoreHref, notifications}) {
 			throw e;
 		}
 	});
+}
+
+function notificationExists(a) {
+	const keys = ["title", "url", "description"];
+	return renderedNotifications.some(b => keys.every(key => a[key] === b[key]));
 }
 
 function findLink(event) {
