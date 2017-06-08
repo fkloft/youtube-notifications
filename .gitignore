@@ -60,4 +60,4 @@ typings/
 # backup files
 *~
 *.xpi
-
+web-ext-artifacts/
