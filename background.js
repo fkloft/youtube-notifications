@@ -35,7 +35,21 @@ base.href = "https://www.youtube.com/";
 setInterval(updateBadge, 600000);
 updateBadge();
 
-browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+browser.runtime.onMessage.addListener(async (request, sender) => {
+	try {
+		return {
+			result: await handleMessage(request, sender),
+			success: true,
+		};
+	} catch(error) {
+		return {
+			error,
+			success: false,
+		};
+	}
+});
+
+function handleMessage(request) {
 	if(request.type == "getNotifications") {
 		return cache.getData();
 	} else if(request.type == "loadMoreNotifications") {
@@ -43,9 +57,7 @@ browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
 	} else if(request.type == "watchLater") {
 		return watchLater(request.id, request.remove);
 	}
-});
-
-
+}
 
 async function getYouTubeParams() {
 	let response = await fetch("https://www.youtube.com/", {
@@ -109,6 +121,10 @@ async function getNotifications() {
 		headers,
 	});
 	let obj = await response.json();
+	
+	if(!("body" in obj))
+		throw "not_logged_in";
+	
 	return parseNotifications(obj.body["yt-masthead-notifications-content"]);
 }
 
@@ -188,6 +204,12 @@ async function watchLater(id, remove=false) {
 
 async function updateBadge() {
 	let count = await getNotificationCount();
+	
+	if(typeof count === "undefined") {
+		browser.browserAction.setBadgeText({text: "!"});
+		browser.browserAction.setTitle({title: "YouTube: not logged in"});
+		return;
+	}
 	
 	if(unseenCount != count)
 		cache.invalidate();

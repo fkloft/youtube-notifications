@@ -15,18 +15,28 @@ document.querySelector(".options").addEventListener("click", ev => {
 
 (async () => {
 	try {
-		let data = await browser.runtime.sendMessage({
+		let data = await sendMessage({
 			type: "getNotifications",
 		});
 		list.innerHTML = "";
 		list.className = "";
 		renderNotifications(data);
 	} catch(e) {
-		list.innerHTML = "<li>An error has occured, could not load notifications.</li>";
+		if(e === "not_logged_in")
+			list.innerHTML = "<li>You must <a href='https://www.youtube.com/feed/subscriptions'>log in</a> to see your notifications.</li>";
+		else
+			list.innerHTML = "<li>An error has occured, could not load notifications.</li>";
 		list.className = "error";
 		throw e;
 	}
 })();
+
+async function sendMessage(params) {
+	let data = await browser.runtime.sendMessage(params);
+	if(data.success)
+		return data.result;
+	throw data.error;
+}
 
 function renderNotifications({loadMoreHref, notifications}) {
 	notifications.forEach(notification => {
@@ -93,7 +103,7 @@ function renderNotifications({loadMoreHref, notifications}) {
 		button.disabled = true;
 		
 		try {
-			let data = await browser.runtime.sendMessage({
+			let data = await sendMessage({
 				type: "loadMoreNotifications",
 				loadMoreHref,
 			});
@@ -110,7 +120,7 @@ function renderNotifications({loadMoreHref, notifications}) {
 async function watchLater(button, id) {
 	let remove = button.classList.contains("added");
 	
-	let added = await browser.runtime.sendMessage({
+	let added = await sendMessage({
 		type: "watchLater",
 		id,
 		remove,
