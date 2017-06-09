@@ -53,14 +53,12 @@ function handleMessage(request) {
 	switch(request.type) {
 		case "getNotifications":
 			return cache.getData();
+		
 		case "loadMoreNotifications":
 			return loadMoreNotifications(request.loadMoreHref);
+		
 		case "watchLater":
 			return watchLater(request.id, request.remove);
-		case "resetCounter":
-			unseenCount = 0;
-			updateBadge();
-			return;
 	}
 }
 
@@ -126,6 +124,9 @@ async function getNotifications() {
 		headers,
 	});
 	let obj = await response.json();
+	
+	unseenCount = 0;
+	updateBadge();
 	
 	if(!("body" in obj))
 		throw "not_logged_in";
