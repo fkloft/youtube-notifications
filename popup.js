@@ -13,6 +13,8 @@ document.querySelector(".options").addEventListener("click", ev => {
 	});
 });
 
+sendMessage("resetCounter");
+
 (async () => {
 	try {
 		let data = await sendMessage({

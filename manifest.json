@@ -2,7 +2,7 @@
 	"manifest_version": 2,
 	
 	"name": "YouTubeNotifications",
-	"version": "2.2.0",
+	"version": "2.2.1",
 	"description": "Shows YouTube notifications in the toolbar.",
 	
 	"icons": {

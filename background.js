@@ -57,6 +57,10 @@ function handleMessage(request) {
 			return loadMoreNotifications(request.loadMoreHref);
 		case "watchLater":
 			return watchLater(request.id, request.remove);
+		case "resetCounter":
+			unseenCount = 0;
+			updateBadge();
+			return;
 	}
 }
 
