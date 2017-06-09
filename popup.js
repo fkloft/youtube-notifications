@@ -67,7 +67,7 @@ function renderNotifications({loadMoreHref, notifications}) {
 		
 		let desc = content.appendChild(document.createElement("ul"));
 		desc.className = "description";
-		desc.innerHTML = notification.description;
+		desc.innerHTML = notification.description; // was sanitized in background.js
 		
 		let thumb = link.appendChild(document.createElement("div"));
 		thumb.className = "thumbnail";

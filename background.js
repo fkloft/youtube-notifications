@@ -50,12 +50,13 @@ browser.runtime.onMessage.addListener(async (request, sender) => {
 });
 
 function handleMessage(request) {
-	if(request.type == "getNotifications") {
-		return cache.getData();
-	} else if(request.type == "loadMoreNotifications") {
-		return loadMoreNotifications(request.loadMoreHref);
-	} else if(request.type == "watchLater") {
-		return watchLater(request.id, request.remove);
+	switch(request.type) {
+		case "getNotifications":
+			return cache.getData();
+		case "loadMoreNotifications":
+			return loadMoreNotifications(request.loadMoreHref);
+		case "watchLater":
+			return watchLater(request.id, request.remove);
 	}
 }
 
@@ -140,7 +141,7 @@ async function loadMoreNotifications(loadMoreHref) {
 
 function parseNotifications(text) {
 	let node = document.createElement("div");
-	node.innerHTML = text;
+	node.innerHTML = text; // should be safe, as the node is never attached to the DOM
 	
 	let loadMoreHref = node.querySelector("button.browse-items-load-more-button").dataset.uixLoadMoreHref;
 	// resolve relative URL (due to base url set to https://youtube.com)
@@ -220,7 +221,7 @@ async function updateBadge() {
 		browser.browserAction.setTitle({title: "YouTube"});
 	} else {
 		browser.browserAction.setBadgeText({text: "" + count});
-		browser.browserAction.setTitle({title: "YouTube: " + count + " unseen notification(s)"});
+		browser.browserAction.setTitle({title: "YouTube: " + count + " unseen notification" + (count==1?"":"s")});
 	}
 }
 
