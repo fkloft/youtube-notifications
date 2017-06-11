@@ -1,14 +1,21 @@
 "use strict";
 /// <reference path="web-ext.d.ts"/>
 /// <reference path="dom.d.ts"/>
+/// <reference path="youtube.d.ts"/>
 
 
 let list = <HTMLElement>document.querySelector("ol");
+let renderedNotifications: YouTubeNotification[] = [];
 
-let renderedNotifications = [];
+list.addEventListener("scroll", ev => {
+	sendMessage({
+		type: "setScrollPosition",
+		scrollTop: list.scrollTop,
+	});
+});
 
 document.querySelector(".options").addEventListener("click", ev => {
-	[...<any>document.querySelectorAll(".options input[type='checkbox']")].forEach(input => {
+	[...document.querySelectorAll(".options input[type='checkbox']")].forEach((input: HTMLInputElement) => {
 		if(input.checked)
 			document.body.classList.add(input.id);
 		else
@@ -16,12 +23,12 @@ document.querySelector(".options").addEventListener("click", ev => {
 	});
 });
 
-(async () => {
+async function loadNotifications(update: boolean = true) {
 	try {
 		let data = await sendMessage({
 			type: "getNotifications",
+			update,
 		});
-		list.innerHTML = "";
 		list.className = "";
 		renderNotifications(data);
 	} catch(e) {
@@ -32,17 +39,20 @@ document.querySelector(".options").addEventListener("click", ev => {
 		list.className = "error";
 		throw e;
 	}
-})();
+}
+loadNotifications();
 
-async function sendMessage(params) {
+async function sendMessage(params: any): Promise<any> {
 	let data = await browser.runtime.sendMessage(params);
 	if(data.success)
 		return data.result;
 	throw data.error;
 }
 
-function renderNotifications({loadMoreHref, notifications}) {
-	notifications.forEach(notification => {
+function renderNotifications(state: NotificationState): void {
+	renderedNotifications = [];
+	list.innerHTML = "";
+	state.notifications.forEach(notification => {
 		let item = list.appendChild(document.createElement("li"));
 		if(notification.unseen)
 			item.className = "unseen notification";
@@ -56,6 +66,11 @@ function renderNotifications({loadMoreHref, notifications}) {
 		
 		let link = item.appendChild(document.createElement("a"));
 		link.href = notification.url;
+		link.addEventListener("click", ev => {
+			if(ev.which != 1) return;
+			visit(notification);
+		});
+		link.addEventListener('visit', ev => visit(notification), false);
 		
 		let avatar = link.appendChild(document.createElement("img"));
 		avatar.className = "avatar";
@@ -78,10 +93,28 @@ function renderNotifications({loadMoreHref, notifications}) {
 		let img = thumb.appendChild(document.createElement("img"));
 		img.src = notification.thumbnail;
 		
+		let toolbar = item.appendChild(document.createElement("div"));
+		toolbar.className = "toolbar";
+		
+		if(notification.unseen) {
+			let button = toolbar.appendChild(document.createElement("button"));
+			button.title = "Mark as read";
+			button.textContent = "Mark as read";
+			button.className = "mark-read yt-uix-button yt-uix-button-default";
+			button.addEventListener("click", async (ev) => {
+				try {
+					button.disabled = true;
+					await visit(notification);
+				} finally {
+					button.disabled = false;
+				}
+			});
+		}
+		
 		if(notification.url.match(/https:\/\/(?:www)?\.youtube\.com\/watch\?(?:[^&]*&)*v=([^&]+)(?:&|#|$)/)) {
 			let id = RegExp.$1;
 			
-			let button = item.appendChild(document.createElement("button"));
+			let button = toolbar.appendChild(document.createElement("button"));
 			button.title = "Watch later";
 			button.textContent = "Watch later";
 			button.className = "watch-later yt-uix-button yt-uix-button-default";
@@ -108,19 +141,20 @@ function renderNotifications({loadMoreHref, notifications}) {
 		try {
 			let data = await sendMessage({
 				type: "loadMoreNotifications",
-				loadMoreHref,
+				loadMoreHref: state.loadMoreHref,
 			});
 			
-			item.parentNode.removeChild(item);
 			renderNotifications(data);
 		} catch(e) {
 			button.disabled = false;
 			throw e;
 		}
 	});
+	
+	list.scrollTop = state.scrollTop;
 }
 
-async function addToWatchLater(button, id) {
+async function addToWatchLater(button: HTMLButtonElement, id: string): Promise<void> {
 	let remove = button.classList.contains("added");
 	
 	let added = await sendMessage({
@@ -135,18 +169,26 @@ async function addToWatchLater(button, id) {
 		button.classList.remove("added");
 }
 
-function notificationExists(a) {
+function notificationExists(a: YouTubeNotification): boolean {
 	const keys = ["title", "url", "description"];
-	return renderedNotifications.some(b => keys.every(key => a[key] === b[key]));
+	return renderedNotifications.some((b: any) => keys.every(key => (<any>a)[key] === b[key]));
 }
 
-function findLink(event) {
-	let element = event.target;
+function findLink(event: MouseEvent): HTMLAnchorElement | null {
+	let element = <Element>event.target;
 	do {
-		if(element.nodeName.toLowerCase() == "a")
+		if(element instanceof HTMLAnchorElement)
 			return element;
 	} while(element = element.parentNode);
 	return null;
+}
+
+async function visit(notification: YouTubeNotification) {
+	await sendMessage({
+		type: "markAsVisited",
+		notification: notification,
+	});
+	await loadNotifications(false);
 }
 
 document.addEventListener("click", ev => {
@@ -160,6 +202,8 @@ document.addEventListener("click", ev => {
 	let properties: any = {
 		url: link.href,
 	};
+	
+	link.dispatchEvent(new Event('visit'));
 	
 	if(ev.which == 2 || ev.ctrlKey) {
 		// new tab

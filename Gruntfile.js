@@ -6,6 +6,13 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-text-replace');
 	grunt.loadNpmTasks('grunt-typescript');
 	
+	try {
+		var webExt = grunt.file.readJSON('web-ext.json');
+	} catch(e) {
+		grunt.log.warn("No web-ext.json found, won't be able to sign/submit.");
+		var webExt = {};
+	}
+	
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
 		clean: {
@@ -24,8 +31,9 @@ module.exports = function(grunt) {
 		},
 		copy: {
 			all: {
+				expand: true,
 				src: [
-					'images',
+					'images/**',
 					'*.css',
 					'*.htm',
 				], dest: 'dist/'
@@ -36,9 +44,11 @@ module.exports = function(grunt) {
 				src: ['src/**/*.ts'],
 				dest: 'dist/js/',
 				options: {
+					declaration: false,
 					target: 'es6',
-					sourceMap: true,
+					sourceMap: false,
 					declaration: true,
+					noImplicitAny: true,
 				},
 			},
 		},
@@ -48,6 +58,15 @@ module.exports = function(grunt) {
 				args: [
 					"build",
 					"-s", "dist",
+				],
+			},
+			submit: {
+				cmd: 'web-ext',
+				args: [
+					"sign",
+					"-s", "dist",
+					"--api-key", webExt["API_KEY"],
+					"--api-secret", webExt["API_SECRET"],
 				],
 			},
 		},
@@ -66,10 +85,23 @@ module.exports = function(grunt) {
 	
 	grunt.registerTask('default', [
 		'clean:all',
-		'typescript:all',
 		'replace:all',
 		'copy:all',
+		'typescript:all',
+	]);
+	grunt.registerTask('build', [
+		'clean:all',
+		'replace:all',
+		'copy:all',
+		'typescript:all',
 		'run:build',
+	]);
+	grunt.registerTask('submit', [
+		'clean:all',
+		'replace:all',
+		'copy:all',
+		'typescript:all',
+		'run:submit',
 	]);
 };
 

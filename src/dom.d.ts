@@ -3,3 +3,10 @@ interface Node extends EventTarget {
 	insertBefore<T extends Node>(newChild: T, refChild?: Node): T;
 }
 
+interface Element {
+	parentNode: Element;
+}
+interface HTMLElement {
+	parentNode: HTMLElement;
+}
+

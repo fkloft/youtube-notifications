@@ -1,18 +1,14 @@
 "use strict";
+/// <reference path="youtube.d.ts"/>
 
-interface NotificationState {
-	
-}
 
 class DataCache<T> {
-	private data: T;
-	private lastUpdate: number;
-	private func: () => T;
+	private data: T = null;
+	private lastUpdate: number = 0;
+	private func: () => T | Promise<T>;
 	private timeout: number
 
-	constructor(func:() => T, timeout:number = 15*60*1000) {
-		this.data = null;
-		this.lastUpdate = 0;
+	constructor(func:() => T | Promise<T>, timeout:number = 15*60*1000) {
 		this.func = func;
 		this.timeout = timeout;
 	}
@@ -22,8 +18,11 @@ class DataCache<T> {
 		this.lastUpdate = 0;
 	}
 	
-	async getData() {
+	async get(update: boolean = true) {
 		if(this.lastUpdate > Date.now() - this.timeout)
+			return this.data;
+		
+		if(this.lastUpdate != 0 && update == false)
 			return this.data;
 		
 		this.data = await Promise.resolve(this.func())
@@ -38,13 +37,19 @@ let unseenCount = 0;
 let cache = new DataCache<NotificationState>(() => getNotifications());
 let params = getYouTubeParams();
 
+// resolve relative links
 let base = document.head.appendChild(document.createElement("base"));
 base.href = "https://www.youtube.com/";
+function resolveUrl(url: string): string {
+	let link = document.createElement("a");
+	link.href = url;
+	return link.href;
+}
 
 setInterval(updateBadge, 600000);
 updateBadge();
 
-browser.runtime.onMessage.addListener(async (request, sender) => {
+browser.runtime.onMessage.addListener(async (request: any, sender: any) => {
 	try {
 		return {
 			result: await handleMessage(request),
@@ -58,20 +63,27 @@ browser.runtime.onMessage.addListener(async (request, sender) => {
 	}
 });
 
-function handleMessage(request) {
+function handleMessage(request: any): any {
 	switch(request.type) {
 		case "getNotifications":
-			return cache.getData();
+			return cache.get(request.update);
 		
 		case "loadMoreNotifications":
 			return loadMoreNotifications(request.loadMoreHref);
 		
 		case "watchLater":
 			return watchLater(request.id, request.remove);
+		
+		case "markAsVisited":
+			return markAsVisited(request.notification);
+		
+		case "setScrollPosition":
+			cache.get(false).then(state => state.scrollTop = request.scrollTop);
+			return;
 	}
 }
 
-async function getYouTubeParams() {
+async function getYouTubeParams(): Promise<{headers: Headers, config: any}> {
 	let response = await fetch("https://www.youtube.com/", {
 		redirect: "follow",
 		credentials: "include",
@@ -109,7 +121,7 @@ async function getYouTubeParams() {
 	return {headers, config};
 }
 
-async function getNotificationCount() {
+async function getNotificationCount(): Promise<number> {
 	let {headers} = await params;
 	let response = await fetch("https://www.youtube.com/feed_ajax?action_get_unseen_notification_count=1", {
 		credentials: "include",
@@ -119,7 +131,7 @@ async function getNotificationCount() {
 	return obj.unseen_notification_count;
 }
 
-async function getNotifications() {
+async function getNotifications(): Promise<NotificationState> {
 	let {headers, config} = await params;
 	
 	let body = new URLSearchParams();
@@ -143,14 +155,18 @@ async function getNotifications() {
 	return parseNotifications(obj.body["yt-masthead-notifications-content"]);
 }
 
-async function loadMoreNotifications(loadMoreHref) {
+async function loadMoreNotifications(loadMoreHref: string): Promise<NotificationState> {
 	let {headers} = await params;
 	let response = await fetch(loadMoreHref, {
 		credentials: "include",
 		headers,
 	});
 	let obj = await response.json();
-	return parseNotifications("<ol>" + obj.content_html + "</ol>" + obj.load_more_widget_html);
+	let newState = parseNotifications("<ol>" + obj.content_html + "</ol>" + obj.load_more_widget_html);
+	let oldState = await cache.get(false);
+	oldState.notifications.push(...newState.notifications);
+	oldState.loadMoreHref = newState.loadMoreHref;
+	return oldState;
 }
 
 function parseNotifications(text: string): NotificationState {
@@ -158,12 +174,9 @@ function parseNotifications(text: string): NotificationState {
 	node.innerHTML = text; // should be safe, as the node is never attached to the DOM
 	
 	let loadMoreHref = (<HTMLElement>node.querySelector("button.browse-items-load-more-button")).dataset.uixLoadMoreHref;
-	// resolve relative URL (due to base url set to https://youtube.com)
-	let link = document.createElement("a");
-	link.href = loadMoreHref;
-	loadMoreHref = link.href;
+	loadMoreHref = resolveUrl(loadMoreHref);
 	
-	let notifications = [...node.querySelectorAll("li .feed-item-container")].map(node => {
+	let notifications = [...node.querySelectorAll("li .feed-item-container")].map((node: HTMLElement) => {
 		let unseen = !!node.querySelector(".unread-dot");
 		let img = <HTMLImageElement>node.querySelector(".notification-avatar .yt-thumb img");
 		let avatar = (<HTMLElement>img).dataset.thumb || img.src;
@@ -173,17 +186,20 @@ function parseNotifications(text: string): NotificationState {
 		let description = cleanup(node.querySelector(".yt-lockup-byline")).innerHTML;
 		img = <HTMLImageElement>node.querySelector(".notification-thumb .yt-thumb img");
 		let thumbnail = img.dataset.thumb || img.src;
+		let {postAction, postData} = node.dataset;
+		postAction = resolveUrl(postAction);
 		
-		return { unseen, avatar, title, url, description, thumbnail };
+		return { unseen, avatar, title, url, description, thumbnail, postAction, postData };
 	});
 	
 	return {
+		scrollTop: 0,
 		loadMoreHref,
 		notifications,
 	};
 }
 
-function cleanup(node) {
+function cleanup(node: Element): Element {
 	while(node.attributes.length)
 		node.removeAttribute(node.attributes[0].name);
 	
@@ -198,7 +214,7 @@ function cleanup(node) {
 	return node;
 }
 
-async function watchLater(id, remove=false) {
+async function watchLater(id: string, remove: boolean = false): Promise<boolean> {
 	let {headers, config} = await params;
 	
 	let body = new URLSearchParams();
@@ -217,7 +233,31 @@ async function watchLater(id, remove=false) {
 	throw obj;
 }
 
-async function updateBadge() {
+async function markAsVisited(notification: YouTubeNotification) {
+	let {headers, config} = await params;
+	
+	let body = new URLSearchParams(notification.postData);
+	body.append("session_token", config["XSRF_TOKEN"]);
+	
+	let response = await fetch(notification.postAction, {
+		method: "POST",
+		body,
+		credentials: "include",
+		headers,
+	});
+	let obj = await response.json();
+	
+	if(obj && obj["code"] && obj["code"] === "SUCCESS" && obj.data.success) {
+		(await cache.get(false)).notifications.forEach(a => {
+			if(notification.postAction == a.postAction && notification.postData == a.postData)
+				a.unseen = false;
+		});
+		return;
+	};
+	throw obj;
+}
+
+async function updateBadge(): Promise<void> {
 	let count = await getNotificationCount();
 	
 	if(typeof count === "undefined") {

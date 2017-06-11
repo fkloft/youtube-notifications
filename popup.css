@@ -161,28 +161,35 @@ li.load-more button {
 	width: 100%;
 }
 
-.watch-later {
-	text-indent: -9999em;
+.toolbar {
 	position: absolute;
 	bottom: 15px;
 	right: 15px;
+}
+.toolbar .yt-uix-button {
+	text-indent: -9999em;
 	opacity: 0;
 }
-.notification:hover .watch-later,
-.watch-later:focus,
-.watch-later:active,
-.watch-later[disabled] {
+.notification:hover .toolbar .yt-uix-button,
+.yt-uix-button:focus,
+.yt-uix-button:active,
+.yt-uix-button[disabled] {
 	opacity: 1;
 }
-.watch-later:before {
+.toolbar .yt-uix-button:before {
 	content: "";
 	width: 20px;
 	height: 20px;
-	background-image: url("images/wl-add.png");
 	position: absolute;
 	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);
+}
+.mark-read:before {
+	background-image: url("images/mark-read.png");
+}
+.watch-later:before {
+	background-image: url("images/wl-add.png");
 }
 .watch-later:not([disabled]).added {
 	opacity: 1;
@@ -202,15 +209,16 @@ li.load-more button {
 .watch-later:not([disabled]).remove:before {
 	background-image: url("images/wl-remove.png");
 }
+.mark-read[disabled]:before,
 .watch-later[disabled]:before {
 	background-image: url("images/loading.gif");
 }
-button::-moz-focus-inner {
+
+.yt-uix-button::-moz-focus-inner {
 	border: 0;
 	padding: 0;
 	margin: 0
 }
-
 .yt-uix-button {
 	display: inline-block;
 	height: 28px;
@@ -228,7 +236,8 @@ button::-moz-focus-inner {
 	cursor: pointer;
 	overflow: visible;
 	border-radius: 2px;
-	box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05)
+	box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+	position: relative;
 }
 .yt-uix-button:focus,
 .yt-uix-button:focus:hover {

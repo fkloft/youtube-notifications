@@ -63,3 +63,4 @@ typings/
 web-ext-artifacts/
 dist/
 node_modules/
+web-ext.json

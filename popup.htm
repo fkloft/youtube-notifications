@@ -5,15 +5,15 @@
 	<title>YouTube Notifications</title>
 	<meta charset="utf-8">
 	<link rel="stylesheet" href="popup.css"/>
-	<!--<link rel="stylesheet" href="chrome://browser/content/extension.css"/>-->
+	<link rel="stylesheet" href="chrome://browser/content/extension.css"/>
 </head>
 
-<body class="hide_dupes">
+<body class="hide_dupes hide_seen">
 	<header>
 		<a class="subscriptions-link" href="https://www.youtube.com/feed/subscriptions" title="Open subscriptions">YouTube</a>
 		<div class="options">
 			<input type="checkbox" id="hide_dupes" checked title="Hide duplicate notifications."><label for="hide_dupes">Hide dupes</label>
-			<input type="checkbox" id="hide_seen" title="Hide notifications that you've already opened."><label for="hide_seen">Hide seen</label>
+			<input type="checkbox" id="hide_seen"  checked title="Hide notifications that you've already opened."><label for="hide_seen">Hide seen</label>
 		</div>
 	</header>
 	<ol class="loading">
@@ -34,7 +34,7 @@
 			Loading...
 		</li>
 	</ol>
-	<script src="popup.js"></script>
+	<script src="js/popup.js"></script>
 </body>
 
 </html>
