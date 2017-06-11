@@ -28,7 +28,7 @@ header {
 	flex: 1 1 auto;
 	box-sizing: content-box;
 	background-repeat: no-repeat;
-	background-image: url("images/icon-48.png"), url("newwin.svg");
+	background-image: url("images/icon-48.png"), url("images/newwin.svg");
 	background-position: 12px center, right 12px center;
 	background-size: 24px 24px;
 	color: inherit;
