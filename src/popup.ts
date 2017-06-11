@@ -1,11 +1,14 @@
 "use strict";
+/// <reference path="web-ext.d.ts"/>
+/// <reference path="dom.d.ts"/>
 
-let list = document.querySelector("ol");
+
+let list = <HTMLElement>document.querySelector("ol");
 
 let renderedNotifications = [];
 
 document.querySelector(".options").addEventListener("click", ev => {
-	[...document.querySelectorAll(".options input[type='checkbox']")].forEach(input => {
+	[...<any>document.querySelectorAll(".options input[type='checkbox']")].forEach(input => {
 		if(input.checked)
 			document.body.classList.add(input.id);
 		else
@@ -82,11 +85,11 @@ function renderNotifications({loadMoreHref, notifications}) {
 			button.title = "Watch later";
 			button.textContent = "Watch later";
 			button.className = "watch-later yt-uix-button yt-uix-button-default";
-			button.addEventListener("click", async ev => {
+			button.addEventListener("click", async (ev) => {
 				try {
 					button.disabled = true;
 					button.classList.remove("error");
-					await watchLater(button, id);
+					await addToWatchLater(button, id);
 				} finally {
 					button.disabled = false;
 				}
@@ -99,7 +102,7 @@ function renderNotifications({loadMoreHref, notifications}) {
 	
 	let button = item.appendChild(document.createElement("button"));
 	button.textContent = "Load more";
-	button.addEventListener("click", async ev => {
+	button.addEventListener("click", async (ev) => {
 		button.disabled = true;
 		
 		try {
@@ -117,7 +120,7 @@ function renderNotifications({loadMoreHref, notifications}) {
 	});
 }
 
-async function watchLater(button, id) {
+async function addToWatchLater(button, id) {
 	let remove = button.classList.contains("added");
 	
 	let added = await sendMessage({
@@ -154,7 +157,7 @@ document.addEventListener("click", ev => {
 	
 	ev.preventDefault();
 	
-	let properties = {
+	let properties: any = {
 		url: link.href,
 	};
 	

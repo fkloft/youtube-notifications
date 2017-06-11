@@ -1,7 +1,16 @@
 "use strict";
 
-class Cache {
-	constructor(func, timeout = 15*60*1000) {
+interface NotificationState {
+	
+}
+
+class DataCache<T> {
+	private data: T;
+	private lastUpdate: number;
+	private func: () => T;
+	private timeout: number
+
+	constructor(func:() => T, timeout:number = 15*60*1000) {
 		this.data = null;
 		this.lastUpdate = 0;
 		this.func = func;
@@ -26,7 +35,7 @@ class Cache {
 
 
 let unseenCount = 0;
-let cache = new Cache(() => getNotifications());
+let cache = new DataCache<NotificationState>(() => getNotifications());
 let params = getYouTubeParams();
 
 let base = document.head.appendChild(document.createElement("base"));
@@ -38,7 +47,7 @@ updateBadge();
 browser.runtime.onMessage.addListener(async (request, sender) => {
 	try {
 		return {
-			result: await handleMessage(request, sender),
+			result: await handleMessage(request),
 			success: true,
 		};
 	} catch(error) {
@@ -144,11 +153,11 @@ async function loadMoreNotifications(loadMoreHref) {
 	return parseNotifications("<ol>" + obj.content_html + "</ol>" + obj.load_more_widget_html);
 }
 
-function parseNotifications(text) {
+function parseNotifications(text: string): NotificationState {
 	let node = document.createElement("div");
 	node.innerHTML = text; // should be safe, as the node is never attached to the DOM
 	
-	let loadMoreHref = node.querySelector("button.browse-items-load-more-button").dataset.uixLoadMoreHref;
+	let loadMoreHref = (<HTMLElement>node.querySelector("button.browse-items-load-more-button")).dataset.uixLoadMoreHref;
 	// resolve relative URL (due to base url set to https://youtube.com)
 	let link = document.createElement("a");
 	link.href = loadMoreHref;
@@ -156,13 +165,13 @@ function parseNotifications(text) {
 	
 	let notifications = [...node.querySelectorAll("li .feed-item-container")].map(node => {
 		let unseen = !!node.querySelector(".unread-dot");
-		let img = node.querySelector(".notification-avatar .yt-thumb img");
-		let avatar = img.dataset.thumb || img.src;
-		let link = node.querySelector(".yt-lockup-title a");
+		let img = <HTMLImageElement>node.querySelector(".notification-avatar .yt-thumb img");
+		let avatar = (<HTMLElement>img).dataset.thumb || img.src;
+		let link = <HTMLAnchorElement>node.querySelector(".yt-lockup-title a");
 		let title = link.title;
 		let url = link.href;
 		let description = cleanup(node.querySelector(".yt-lockup-byline")).innerHTML;
-		img = node.querySelector(".notification-thumb .yt-thumb img");
+		img = <HTMLImageElement>node.querySelector(".notification-thumb .yt-thumb img");
 		let thumbnail = img.dataset.thumb || img.src;
 		
 		return { unseen, avatar, title, url, description, thumbnail };

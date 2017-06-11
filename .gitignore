@@ -61,3 +61,5 @@ typings/
 *~
 *.xpi
 web-ext-artifacts/
+dist/
+node_modules/

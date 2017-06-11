@@ -2,7 +2,7 @@
 	"manifest_version": 2,
 	
 	"name": "YouTubeNotifications",
-	"version": "2.2.2",
+	"version": "@@VERSION@@",
 	"description": "Shows YouTube notifications in the toolbar.",
 	
 	"icons": {
@@ -24,7 +24,7 @@
 	],
 	
 	"background": {
-		"scripts": ["background.js"]
+		"scripts": ["js/background.js"]
 	},
 	
 	"browser_action": {

@@ -1,0 +1,25 @@
+{
+  "name": "youtube-notifications",
+  "version": "2.2.2",
+  "description": "Shows YouTube notifications in the toolbar.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fkloft/youtube-notifications.git"
+  },
+  "author": "Felix Kloft",
+  "license": "MPL-2.0",
+  "bugs": {
+    "url": "https://github.com/fkloft/youtube-notifications/issues"
+  },
+  "homepage": "https://github.com/fkloft/youtube-notifications#readme",
+  "devDependencies": {
+    "grunt": "^1.0.1",
+    "grunt-contrib-clean": "^1.1.0",
+    "grunt-contrib-copy": "^1.0.0",
+    "grunt-contrib-watch": "^1.0.0",
+    "grunt-run": "^0.7.0",
+    "grunt-text-replace": "^0.4.0",
+    "grunt-typescript": "github:k-maru/grunt-typescript"
+  },
+  "dependencies": {}
+}
