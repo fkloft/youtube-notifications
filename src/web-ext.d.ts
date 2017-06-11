@@ -37,6 +37,27 @@ declare namespace browser {
 		}
 	}
 	
+	namespace storage {
+		var local: StorageArea;
+		var sync: StorageArea;
+		var managed: StorageArea;
+		
+		var onChanged: EventTarget<(changes: {[key: string]: StorageChange}, areaName: "local"|"sync"|"managed") => void>;
+		
+		class StorageArea {
+			set(keys: any): Promise<void>;
+			get(keys?: any | null): Promise<any>;
+			getBytesInUse(keys?: any | null): Promise<number>;
+			remove(keys: string | string[]): Promise<void>;
+			clear(): Promise<void>;
+		}
+		
+		interface StorageChange {
+			oldValue?: any;
+			newValue?: any;
+		}
+	}
+	
 	namespace tabs {
 		function create(createProperties: TabProperties): Promise<tabs.Tab>;
 		function query(queryInfo: QueryProperties): Promise<tabs.Tab[]>;

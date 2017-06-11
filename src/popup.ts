@@ -14,8 +14,25 @@ list.addEventListener("scroll", ev => {
 	});
 });
 
+(async () => {
+	let prefs = await browser.storage.local.get({
+		hide_dupes: true,
+		hide_seen: true,
+	});
+	
+	for(let key in prefs) {
+		(<HTMLInputElement>document.getElementById(key)).checked = prefs[key];
+		if(prefs[key])
+			document.body.classList.add(key);
+	}
+})();
+
 document.querySelector(".options").addEventListener("click", ev => {
-	[...document.querySelectorAll(".options input[type='checkbox']")].forEach((input: HTMLInputElement) => {
+	[...document.querySelectorAll(".options input[type='checkbox']")].forEach(async (input: HTMLInputElement) => {
+		await browser.storage.local.set({
+			[input.id]: input.checked,
+		});
+		
 		if(input.checked)
 			document.body.classList.add(input.id);
 		else
