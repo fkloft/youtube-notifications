@@ -26,6 +26,8 @@ module.exports = function(grunt) {
 				dest: 'dist/',
 				replacements: [
 					{ from: '@@VERSION@@', to: '<%= pkg.version %>' },
+					{ from: '@@AUTHOR@@', to: '<%= pkg.author %>' },
+					{ from: '@@HOMEPAGE@@', to: '<%= pkg.homepage %>' },
 				],
 			}
 		},

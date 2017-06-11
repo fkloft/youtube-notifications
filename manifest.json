@@ -2,6 +2,8 @@
 	"manifest_version": 2,
 	
 	"name": "YouTubeNotifications",
+	"author": "@@AUTHOR@@",
+	"homepage_url": "@@HOMEPAGE@@",
 	"version": "@@VERSION@@",
 	"description": "Shows YouTube notifications in the toolbar.",
 	
