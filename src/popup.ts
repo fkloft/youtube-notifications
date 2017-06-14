@@ -25,19 +25,23 @@ list.addEventListener("scroll", ev => {
 		if(prefs[key])
 			document.body.classList.add(key);
 	}
+	
+	updateHiddenCount();
 })();
 
-document.querySelector(".options").addEventListener("click", ev => {
-	[...document.querySelectorAll(".options input[type='checkbox']")].forEach(async (input: HTMLInputElement) => {
+document.querySelector(".options").addEventListener("click", async ev => {
+	for(let input of document.querySelectorAll(".options input[type='checkbox']")) {
 		await browser.storage.local.set({
-			[input.id]: input.checked,
+			[input.id]: (<HTMLInputElement>input).checked,
 		});
 		
-		if(input.checked)
+		if((<HTMLInputElement>input).checked)
 			document.body.classList.add(input.id);
 		else
 			document.body.classList.remove(input.id);
-	});
+	}
+	
+	updateHiddenCount();
 });
 
 async function loadNotifications(update: boolean = true) {
@@ -148,6 +152,9 @@ function renderNotifications(state: NotificationState): void {
 	});
 	
 	let item = list.appendChild(document.createElement("li"));
+	item.className = "spacer";
+	
+	item = list.appendChild(document.createElement("li"));
 	item.className = "load-more";
 	
 	let button = item.appendChild(document.createElement("button"));
@@ -169,6 +176,7 @@ function renderNotifications(state: NotificationState): void {
 	});
 	
 	list.scrollTop = state.scrollTop;
+	updateHiddenCount();
 }
 
 async function addToWatchLater(button: HTMLButtonElement, id: string): Promise<void> {
@@ -198,6 +206,20 @@ function findLink(event: MouseEvent): HTMLAnchorElement | null {
 			return element;
 	} while(element = element.parentNode);
 	return null;
+}
+
+function updateHiddenCount() {
+	let hidden = 0;
+	for(let li of <HTMLElement[]>Array.from(list.children)) {
+		if(li.offsetParent === null) {
+			hidden++;
+		} else if(hidden) {
+			li.dataset.hiddenCount = <any>hidden;
+			hidden = 0;
+		} else {
+			delete li.dataset.hiddenCount;
+		}
+	}
 }
 
 async function visit(notification: YouTubeNotification) {

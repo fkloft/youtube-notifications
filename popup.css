@@ -66,6 +66,8 @@ ol {
 	font-size: 11px;
 	flex: 1 1 auto;
 	overflow: auto;
+	display: flex;
+	flex-direction: column;
 }
 
 .loading, .error {
@@ -89,7 +91,19 @@ body.hide_seen .notification:not(.unseen) {
 	display: none;
 }
 
-.unseen.notification::before {
+li[data-hidden-count]::before {
+	content: attr(data-hidden-count) " notifications hidden";
+	display: block;
+	text-align: center;
+}
+li[data-hidden-count="1"]::before {
+	content: "1 notification hidden";
+}
+.notification::before {
+	border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.unseen.notification::after {
 	content: "";
 	position: absolute;
 	left: 7.5px;
@@ -156,6 +170,9 @@ body.hide_seen .notification:not(.unseen) {
 	width: 100%;
 }
 
+li.spacer {
+	flex: 1 1 auto;
+}
 li.load-more button {
 	text-align: center;
 	width: 100%;
