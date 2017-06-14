@@ -42,16 +42,23 @@ module.exports = function(grunt) {
 			},
 		},
 		typescript: {
-			all: {
-				src: ['src/**/*.ts'],
+			options: {
+				target: 'es6',
+				declaration: false,
+				sourceMap: false,
+				noImplicitAny: true,
+				references: [
+					"src/**/*.d.ts",
+				],
+			},
+			
+			popup: {
+				src: ['src/popup.ts'],
 				dest: 'dist/js/',
-				options: {
-					declaration: false,
-					target: 'es6',
-					sourceMap: false,
-					declaration: true,
-					noImplicitAny: true,
-				},
+			},
+			background: {
+				src: ['src/background.ts'],
+				dest: 'dist/js/',
 			},
 		},
 		run: {
@@ -89,20 +96,15 @@ module.exports = function(grunt) {
 		'clean:all',
 		'replace:all',
 		'copy:all',
-		'typescript:all',
+		'typescript:popup',
+		'typescript:background',
 	]);
 	grunt.registerTask('build', [
-		'clean:all',
-		'replace:all',
-		'copy:all',
-		'typescript:all',
+		'default',
 		'run:build',
 	]);
 	grunt.registerTask('submit', [
-		'clean:all',
-		'replace:all',
-		'copy:all',
-		'typescript:all',
+		'default',
 		'run:submit',
 	]);
 };

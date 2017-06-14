@@ -1,6 +1,4 @@
 "use strict";
-/// <reference path="youtube.d.ts"/>
-
 
 class DataCache<T> {
 	private data: T = null;

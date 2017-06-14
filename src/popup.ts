@@ -1,8 +1,8 @@
 "use strict";
-/// <reference path="web-ext.d.ts"/>
-/// <reference path="dom.d.ts"/>
-/// <reference path="youtube.d.ts"/>
 
+let params = new URLSearchParams(location.search);
+if(params.get("popup"))
+	document.body.classList.add("popup");
 
 let list = <HTMLElement>document.querySelector("ol");
 let renderedNotifications: YouTubeNotification[] = [];
@@ -248,11 +248,11 @@ document.addEventListener("click", ev => {
 		// new tab
 		properties.active = !ev.shiftKey; // background if with shift
 		browser.tabs.create(properties)
-		.then(() => close());
+		.then(() => close()); // TODO only if in popup
 	} else if(ev.shiftKey) {
 		// new window
 		browser.windows.create(properties)
-		.then(() => close());
+		.then(() => close()); // TODO only if in popup
 	} else {
 		// current tab or new tab
 		browser.tabs.query({
@@ -262,7 +262,7 @@ document.addEventListener("click", ev => {
 		.then(tabs => tabs[0].id)
 		.then(tabId => browser.tabs.update(tabId, properties))
 		.catch(e => browser.tabs.create(properties))
-		.then(() => close());
+		.then(() => close()); // TODO only if in popup
 	}
 });
 
